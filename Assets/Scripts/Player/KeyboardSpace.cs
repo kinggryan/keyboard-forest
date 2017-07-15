@@ -3,20 +3,24 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(KeyboardSpaceEffectManager))]
+[RequireComponent(typeof(PlantSpace))]
 public class KeyboardSpace : MonoBehaviour {
 
 	public string keyboardButton;
 	public bool permanentlyCharged = false;
 
 	KeyboardSpaceEffectManager effectManager;
+    PlantSpace plant;
 
 	private float chargeDelay = 0.8f;
 	private float maxChargeTime = 2f;
 	private float currentChargeTime = 0f;
+    private bool charge;
 	private GameObject energyWavePrefab;
 
 	// Use this for initialization
 	void Start () {
+        plant = GetComponent<PlantSpace>();
 		effectManager = GetComponent<KeyboardSpaceEffectManager> ();
 		effectManager.buttonHeldShakeDelay = chargeDelay;
 		effectManager.buttonHeldShakeMaxTime = maxChargeTime;
@@ -38,22 +42,29 @@ public class KeyboardSpace : MonoBehaviour {
 		effectManager.ButtonPushed ();
 		currentChargeTime = 0;
 		if (ShouldStartCharging()) {
+            charge = true;
 			effectManager.StartCharging ();
 		}
+        plant.Grow();
 	}
 
 	void ButtonReleased() {
 		effectManager.ButtonReleased (currentChargeTime >= chargeDelay);
-		if (permanentlyCharged) {
+		if (permanentlyCharged || charge) {
 			GameObject.Instantiate (energyWavePrefab, transform.position + Vector3.up, Quaternion.AngleAxis(90,Vector3.right));
 		}
+        charge = false;
 	}
 
 	void ButtonHeld() {
-		currentChargeTime += Time.deltaTime;
-		if (currentChargeTime >= chargeDelay) {
-			effectManager.Charged ();
-		}
+        if(charge)
+        {
+            currentChargeTime += Time.deltaTime;
+            if (currentChargeTime >= chargeDelay)
+            {
+                effectManager.Charged();
+            }
+        }
 	}
 
 	bool ShouldStartCharging() {
